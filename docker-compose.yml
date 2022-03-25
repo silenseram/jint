@@ -1,0 +1,46 @@
+version: "3"
+
+networks:
+  shared:
+    external: false
+
+services:
+  logsservice:
+    image: openjdk:8
+    domainname: logsservice
+    networks:
+      - shared
+    volumes:
+      - "./artifacts/server/server.jar:/app/server.jar"
+      - "./artifacts/server/application.properties:/app/application.properties"
+      - "./artifacts/server/run.sh:/app/run.sh"
+      - "./artifacts/server/wait_for.sh:/app/wait_for.sh"
+    command: "bash /app/run.sh"
+
+  logsaccessor:
+    image: openjdk:17
+    networks:
+      - shared
+    volumes:
+      - "./artifacts/client/client.jar:/app/client.jar"
+      - "./artifacts/client/application.properties:/app/application.properties"
+    domainname: logsaccessor
+    ports:
+      - "6007:8081"
+    command: "java -jar /app/client.jar --spring.config.location=/app/application.properties"
+
+  jsqldb:
+    domainname: jsqldb
+    image: mariadb:10.8
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: logs_db
+      MYSQL_USER: logs
+      MYSQL_PASSWORD: 1234
+    volumes:
+      - jbdata:/var/lib/mysql
+    networks:
+      - shared
+
+volumes:
+  jbdata:
